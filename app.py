@@ -63,6 +63,10 @@ def get_reset():
 
     return jsonify({"board": triangles})
 
+@app.route('/api/board/reload', methods=['GET'])
+def get_update_board():
+    return jsonify({"board": triangles})
+
 @app.route('/api/move', methods=['POST'])
 def get_move():
     data = request.get_json()
@@ -110,6 +114,43 @@ def get_move():
             moves.append(triangle_id - (dice_1 + dice_2))
 
     return jsonify({"moves": moves})
+
+@app.route('/api/moveTo', methods=['POST'])
+def get_moveTo():
+    data = request.get_json()
+    print("Received data:", data)
+
+   
+    index_from = int(data.get("index_from"))
+    index_to = int(data.get("index_to"))
+
+    if(index_from > 5 and index_from <= 11):
+        index_from = 11 - index_from + 6
+    if(index_from > -1 and index_from <= 5):
+        index_from = 5 - index_from
+
+    if(index_to > 5 and index_to <= 11):
+        index_to = 11 - index_to + 6
+    if(index_to > -1 and index_to <= 5):
+        index_to = 5 - index_to
+
+    if index_from < 0 or index_from >= 24 or index_to < 0 or index_to >= 24:
+        return jsonify({"error": "Invalid indexes"}), 400
+
+    if triangles[index_from]:
+        piece = triangles[index_from].pop()
+        triangles[index_to].append(piece)
+
+        #for row in triangles:
+        #    print(row, "\n")
+
+        return jsonify({"status": 200, "moved_piece": piece, "index_from": index_from, "index_to": index_to})
+    else:
+        return jsonify({"error": "No piece to move at index_from"}), 400
+
+        
+
+    return jsonify({"status": 200})
 
 @app.route('/api/board', methods=['GET'])
 def get_board():
