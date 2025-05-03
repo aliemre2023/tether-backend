@@ -21,7 +21,7 @@ def move_white(from_index, dice_value):
     target_stack = triangles[to_index]
     target_color = target_stack[-1] if target_stack else None
 
-    if len(target_stack) <= 1 or target_color == "white":
+    if (len(target_stack) <= 1 or target_color == "white") and (target_color != "black"):
         return 1
 
     return 0
@@ -41,7 +41,7 @@ def move_black(from_index, dice_value):
     target_stack = triangles[to_index]
     target_color = target_stack[-1] if target_stack else None
 
-    if len(target_stack) <= 1 or target_color == "black":
+    if (len(target_stack) <= 1 or target_color == "black")  and (target_color != "white"):
         return 1
 
     return 0
