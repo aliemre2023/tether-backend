@@ -5,6 +5,8 @@ app = Flask(__name__)
 CORS(app)
 
 triangles = [[] for _ in range(24)]
+broken_white = 0
+broken_black = 0
 
 def move_white(from_index, dice_value):
     if not (0 <= from_index < 24):
@@ -21,7 +23,7 @@ def move_white(from_index, dice_value):
     target_stack = triangles[to_index]
     target_color = target_stack[-1] if target_stack else None
 
-    if (len(target_stack) <= 1 or target_color == "white") and (target_color != "black"):
+    if (len(target_stack) <= 1 or target_color == "white"):
         return 1
 
     return 0
@@ -41,13 +43,17 @@ def move_black(from_index, dice_value):
     target_stack = triangles[to_index]
     target_color = target_stack[-1] if target_stack else None
 
-    if (len(target_stack) <= 1 or target_color == "black")  and (target_color != "white"):
+    if (len(target_stack) <= 1 or target_color == "black"):
         return 1
 
     return 0
 
 @app.route('/api/reset', methods=['GET'])
 def get_reset():
+    global broken_white, broken_black
+    broken_white = 0
+    broken_black = 0
+
     for i in range(24):
         triangles[i] = []
 
@@ -65,7 +71,11 @@ def get_reset():
 
 @app.route('/api/board/reload', methods=['GET'])
 def get_update_board():
-    return jsonify({"board": triangles})
+    global broken_white, broken_black
+    return jsonify({
+        "board": triangles,
+        "broken": [broken_white, broken_black]
+    })
 
 @app.route('/api/move', methods=['POST'])
 def get_move():
@@ -80,7 +90,7 @@ def get_move():
         if(triangle_id > 5 and triangle_id <= 11):
             triangle_id = 11 - triangle_id + 6
         if(triangle_id > -1 and triangle_id <= 5):
-            triangle_id = 5 - triangle_id
+            triangle_id = 5 - triangle_id       
         
 
     except (TypeError, ValueError):
@@ -134,6 +144,18 @@ def get_moveTo():
     if(index_to > -1 and index_to <= 5):
         index_to = 5 - index_to
 
+
+    # default broken status
+    global broken_white, broken_black 
+    if(len(triangles[index_to]) == 1 and (triangles[index_from][-1] == "black" and triangles[index_to][-1] == "white")):
+        print("HEYYYYYYYY")
+        broken_white += 1
+        triangles[index_to].pop()
+    if(len(triangles[index_to]) == 1 and (triangles[index_from][-1] == "white" and triangles[index_to][-1] == "black")):
+        print("HEYY0000000")
+        broken_black += 1
+        triangles[index_to].pop()
+
     if index_from < 0 or index_from >= 24 or index_to < 0 or index_to >= 24:
         return jsonify({"error": "Invalid indexes"}), 400
 
@@ -147,8 +169,6 @@ def get_moveTo():
         return jsonify({"status": 200, "moved_piece": piece, "index_from": index_from, "index_to": index_to})
     else:
         return jsonify({"error": "No piece to move at index_from"}), 400
-
-        
 
     return jsonify({"status": 200})
 
