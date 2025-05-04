@@ -77,6 +77,41 @@ def get_update_board():
         "broken": [broken_white, broken_black]
     })
 
+@app.route('/api/piece/save', methods=['POST'])
+def get_save_moves():
+    print("something in there")
+    data = request.get_json()
+    index = int(data.get("index"))
+    dice1 = int(data.get("dice1"))
+    dice2 = int(data.get("dice2"))
+
+    available_places = []
+    if(index == 101):
+        places = [dice1 - 1, dice2 - 1, dice1 + dice2 - 1]
+        for i in places:
+            if(len(triangles[i]) == 0):
+                available_places.append(i)
+            elif(len(triangles[i]) == 1 and triangles[i][-1] == "black"):
+                available_places.append(i)
+            elif(triangles[i][-1] == "white"):
+                available_places.append(i)
+
+            
+    if(index == 102):
+        places = [24 - dice1, 24 - dice2, 24 - (dice1 + dice2)]
+        for i in places:
+            if(len(triangles[i]) == 0):
+                available_places.append(i)
+            elif(len(triangles[i]) == 1 and triangles[i][-1] == "white"):
+                available_places.append(i)
+            elif(triangles[i][-1] == "black"):
+                available_places.append(i)
+
+    return jsonify({
+        "highlightedPlaces": available_places,
+    })
+
+
 @app.route('/api/move', methods=['POST'])
 def get_move():
     data = request.get_json()
@@ -127,6 +162,8 @@ def get_move():
 
 @app.route('/api/moveTo', methods=['POST'])
 def get_moveTo():
+    global broken_white, broken_black
+
     data = request.get_json()
     print("Received data:", data)
 
@@ -144,9 +181,31 @@ def get_moveTo():
     if(index_to > -1 and index_to <= 5):
         index_to = 5 - index_to
 
+    if(index_from == 101 or index_from == 102):
+        if(index_from == 101):
+            broken_white -= 1
+            if(len(triangles[index_to]) == 0):
+                triangles[index_to].append("white")
+            elif(len(triangles[index_to]) == 1 and triangles[index_to][-1] == "black"):
+                broken_black += 1
+                triangles[index_to].pop()
+                triangles[index_to].append("white")
+            elif(triangles[index_to][-1] == "white"):
+                triangles[index_to].append("white")
+        if(index_from == 102):
+            broken_black -= 1
+            if(len(triangles[index_to]) == 0):
+                triangles[index_to].append("black")
+            elif(len(triangles[index_to]) == 1 and triangles[index_to][-1] == "white"):
+                broken_white += 1
+                triangles[index_to].pop()
+                triangles[index_to].append("black")
+            elif(triangles[index_to][-1] == "black"):
+                triangles[index_to].append("black")
+        return jsonify({"status": 200, "index_from": index_from, "index_to": index_to})
+
 
     # default broken status
-    global broken_white, broken_black 
     if(len(triangles[index_to]) == 1 and (triangles[index_from][-1] == "black" and triangles[index_to][-1] == "white")):
         print("HEYYYYYYYY")
         broken_white += 1
